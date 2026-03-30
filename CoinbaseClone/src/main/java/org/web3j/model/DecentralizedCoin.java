@@ -107,7 +107,6 @@ public class DecentralizedCoin extends Contract {
         ArrayList<ApprovalEventResponse> responses = new ArrayList<ApprovalEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             ApprovalEventResponse typedResponse = new ApprovalEventResponse();
-            typedResponse.log = eventValues.getLog();
             typedResponse.owner = (String) eventValues.getIndexedValues().get(0).getValue();
             typedResponse.spender = (String) eventValues.getIndexedValues().get(1).getValue();
             typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
@@ -141,7 +140,6 @@ public class DecentralizedCoin extends Contract {
         ArrayList<OwnershipTransferredEventResponse> responses = new ArrayList<OwnershipTransferredEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             OwnershipTransferredEventResponse typedResponse = new OwnershipTransferredEventResponse();
-            typedResponse.log = eventValues.getLog();
             typedResponse.previousOwner = (String) eventValues.getIndexedValues().get(0).getValue();
             typedResponse.newOwner = (String) eventValues.getIndexedValues().get(1).getValue();
             responses.add(typedResponse);
@@ -173,7 +171,6 @@ public class DecentralizedCoin extends Contract {
         ArrayList<TransferEventResponse> responses = new ArrayList<TransferEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             TransferEventResponse typedResponse = new TransferEventResponse();
-            typedResponse.log = eventValues.getLog();
             typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
             typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
             typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();

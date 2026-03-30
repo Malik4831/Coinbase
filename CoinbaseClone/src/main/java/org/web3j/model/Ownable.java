@@ -71,7 +71,6 @@ public class Ownable extends Contract {
         ArrayList<OwnershipTransferredEventResponse> responses = new ArrayList<OwnershipTransferredEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             OwnershipTransferredEventResponse typedResponse = new OwnershipTransferredEventResponse();
-            typedResponse.log = eventValues.getLog();
             typedResponse.previousOwner = (String) eventValues.getIndexedValues().get(0).getValue();
             typedResponse.newOwner = (String) eventValues.getIndexedValues().get(1).getValue();
             responses.add(typedResponse);

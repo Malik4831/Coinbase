@@ -82,7 +82,6 @@ public class IERC20 extends Contract {
         ArrayList<ApprovalEventResponse> responses = new ArrayList<ApprovalEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             ApprovalEventResponse typedResponse = new ApprovalEventResponse();
-            typedResponse.log = eventValues.getLog();
             typedResponse.owner = (String) eventValues.getIndexedValues().get(0).getValue();
             typedResponse.spender = (String) eventValues.getIndexedValues().get(1).getValue();
             typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
@@ -116,7 +115,6 @@ public class IERC20 extends Contract {
         ArrayList<TransferEventResponse> responses = new ArrayList<TransferEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             TransferEventResponse typedResponse = new TransferEventResponse();
-            typedResponse.log = eventValues.getLog();
             typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
             typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
             typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
