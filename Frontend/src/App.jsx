@@ -38,6 +38,55 @@ function clearAuthState(state) {
   return next;
 }
 
+function extractAuthToken(payload) {
+  if (!payload || typeof payload !== "object") {
+    return "";
+  }
+
+  const directToken = payload.token || payload.accessToken || payload.jwt || payload.idToken;
+  if (typeof directToken === "string" && directToken.trim()) {
+    return directToken;
+  }
+
+  const nestedContainers = [
+    payload.data,
+    payload.result,
+    payload.payload,
+    payload.auth,
+    payload.authentication,
+    payload.user,
+  ];
+
+  for (const container of nestedContainers) {
+    const nestedToken = extractAuthToken(container);
+    if (nestedToken) {
+      return nestedToken;
+    }
+  }
+
+  return "";
+}
+
+function extractRegisteredUser(payload) {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  if (payload.id != null) {
+    return payload;
+  }
+
+  const nestedContainers = [payload.user, payload.data, payload.result, payload.payload];
+  for (const container of nestedContainers) {
+    const nestedUser = extractRegisteredUser(container);
+    if (nestedUser) {
+      return nestedUser;
+    }
+  }
+
+  return null;
+}
+
 function normalizeWalletRows(walletRows) {
   if (!Array.isArray(walletRows)) {
     return [];
@@ -299,15 +348,25 @@ function AuthPage({ authState, setAuthState }) {
     setError("");
     setStatus("");
     try {
-      const user = await api.register(register);
-      if (!user || typeof user !== "object" || user.id == null) {
+      const response = await api.register(register);
+      const user = extractRegisteredUser(response);
+      if (!user) {
         throw new Error("Registration succeeded but the API did not return a valid user payload.");
       }
-      const next = { ...authState, registeredUser: user, rememberedUserId: String(user.id ?? "") };
+      const issuedToken = extractAuthToken(response);
+      const next = {
+        ...authState,
+        token: issuedToken || authState.token,
+        registeredUser: user,
+        rememberedUserId: String(user.id ?? ""),
+      };
       setAuthState(next);
       persistAuthState(next);
-      setStatus(`Registered user ${user.id}.`);
+      setStatus(issuedToken ? `Registered user ${user.id} and signed in.` : `Registered user ${user.id}.`);
       setRegister({ email: "", password: "", firstName: "", lastName: "" });
+      if (issuedToken) {
+        navigate("/app", { replace: true });
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -319,10 +378,11 @@ function AuthPage({ authState, setAuthState }) {
     setStatus("");
     try {
       const data = await api.login(login);
-      if (!data || typeof data !== "object" || !data.token) {
+      const token = extractAuthToken(data);
+      if (!token) {
         throw new Error("Login succeeded but the API did not return a valid token payload.");
       }
-      const next = { ...authState, token: data.token };
+      const next = { ...authState, token };
       setAuthState(next);
       persistAuthState(next);
       setStatus("Login successful.");
