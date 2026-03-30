@@ -86,7 +86,7 @@ public class ERC20 extends Contract {
     }
 
     public static List<ApprovalEventResponse> getApprovalEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = Collections.singletonList(staticExtractEventParametersWithLog(APPROVAL_EVENT, transactionReceipt.getLogs().get(0)));
+        List<Contract.EventValuesWithLog> valueList = staticExtractEventParametersWithLog(APPROVAL_EVENT, transactionReceipt);
         ArrayList<ApprovalEventResponse> responses = new ArrayList<ApprovalEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             ApprovalEventResponse typedResponse = new ApprovalEventResponse();
@@ -119,7 +119,7 @@ public class ERC20 extends Contract {
     }
 
     public static List<TransferEventResponse> getTransferEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = Collections.singletonList(staticExtractEventParametersWithLog(TRANSFER_EVENT, transactionReceipt.getLogs().get(0)));
+        List<Contract.EventValuesWithLog> valueList = staticExtractEventParametersWithLog(TRANSFER_EVENT, transactionReceipt);
         ArrayList<TransferEventResponse> responses = new ArrayList<TransferEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             TransferEventResponse typedResponse = new TransferEventResponse();
