@@ -28,6 +28,7 @@ function buildUrl(path, params) {
 async function request(path, options = {}) {
   const { method = "GET", params, body, token } = options;
   const headers = {};
+  const url = buildUrl(path, params);
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -44,11 +45,24 @@ async function request(path, options = {}) {
     headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
 
-  const response = await fetch(buildUrl(path, params), {
-    method,
-    headers,
-    body: payload,
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: payload,
+    });
+  } catch (cause) {
+    const error = new Error(`Network request failed for ${method} ${url}. Check that the API server is reachable and CORS allows this origin.`);
+    error.details = {
+      path,
+      method,
+      url,
+      apiBaseUrl: API_BASE_URL || "(empty)",
+      cause: cause instanceof Error ? cause.message : String(cause),
+    };
+    throw error;
+  }
 
   const contentType = response.headers.get("content-type") || "";
   const text = await response.text();
@@ -69,12 +83,13 @@ async function request(path, options = {}) {
   if (response.ok && looksLikeHtml) {
     const error = new Error(
       API_BASE_URL
-        ? `Expected JSON from ${buildUrl(path, params)} but received HTML instead. Check that VITE_API_BASE_URL points to the API service, not the frontend.`
+        ? `Expected JSON from ${url} but received HTML instead. Check that VITE_API_BASE_URL points to the API service, not the frontend.`
         : `Expected JSON from ${path} but received HTML instead. In production, set VITE_API_BASE_URL to your backend URL and rebuild the frontend.`
     );
     error.status = response.status;
     error.details = {
       path,
+      url,
       apiBaseUrl: API_BASE_URL || "(empty)",
       contentType,
     };
