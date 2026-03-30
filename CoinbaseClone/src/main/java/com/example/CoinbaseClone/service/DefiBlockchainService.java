@@ -1,0 +1,87 @@
+package com.example.CoinbaseClone.service;
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.web3j.crypto.Credentials;
+import org.web3j.model.DecentralizedCoin;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.RemoteFunctionCall;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.tx.gas.DefaultGasProvider;
+
+import java.math.BigInteger;
+
+
+@Service
+public class DefiBlockchainService {
+    private final Web3j web3j;
+    private final Credentials credentials;
+
+
+@Autowired
+    public DefiBlockchainService(Web3j web3j, Credentials credentials) throws Exception {
+        this.web3j = web3j;
+        this.credentials = credentials;
+
+    }
+
+    public String getSignerAddress() {
+        return credentials.getAddress();
+    }
+
+
+    public DecentralizedCoin loadContract(String contractAddress)throws Exception {
+        return DecentralizedCoin.load(contractAddress,web3j,credentials,new DefaultGasProvider());
+
+
+    }
+
+    public DecentralizedCoin loadContract(String contractAddress, Credentials signingCredentials) throws Exception {
+        return DecentralizedCoin.load(contractAddress, web3j, signingCredentials, new DefaultGasProvider());
+    }
+
+
+    public BigInteger getTokenBalance(String walletAddress,String contractAddress) throws Exception {
+DecentralizedCoin loadedContract = loadContract(contractAddress);
+        return loadedContract.balanceOf( walletAddress).send();
+    }
+
+
+
+    public TransactionReceipt transferTokens(String contractAddress, Credentials signingCredentials, String to, BigInteger amount) throws Exception {
+        DecentralizedCoin loadedContract = loadContract(contractAddress, signingCredentials);
+        return loadedContract.transfer(to, amount).send();
+    }
+
+    public TransactionReceipt transferTokensFrom(String contractAddress,String from,String to, BigInteger amount) throws Exception {
+        DecentralizedCoin loadedContract = loadContract(contractAddress);
+
+        return loadedContract.transferFrom(from,to,amount).send();
+    }
+
+    public TransactionReceipt mintTokens(String contractAddress,String to, BigInteger amount) throws Exception {
+        DecentralizedCoin loadedContract = loadContract(contractAddress);
+
+        return loadedContract.mint( to, amount).send();
+    }
+
+    public TransactionReceipt burnTokens(String contractAddress,String from,BigInteger amount) throws Exception {
+        DecentralizedCoin loadedContract = loadContract(contractAddress);
+
+        return loadedContract.burn(from, amount).send();
+    }
+
+    public RemoteFunctionCall<String> getTokenName(String contractAddress) throws Exception {
+        DecentralizedCoin loadedContract = loadContract(contractAddress);
+        return loadedContract.name();
+    }
+
+    public String getTokenSymbol(String contractAddress) throws Exception {
+        DecentralizedCoin loadedContract = loadContract(contractAddress);
+
+        return loadedContract.symbol().send();
+    }
+
+
+}

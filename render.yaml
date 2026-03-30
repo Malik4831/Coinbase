@@ -1,0 +1,56 @@
+databases:
+  - name: coinbaseclone-db
+    databaseName: coinbaseclone
+    user: coinbaseclone
+    plan: free
+
+services:
+  - type: web
+    name: coinbaseclone-api
+    runtime: docker
+    rootDir: CoinbaseClone
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: coinbaseclone-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: coinbaseclone-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: coinbaseclone-db
+          property: password
+      - key: SPRING_JPA_SHOW_SQL
+        value: "false"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEB3J_PROVIDER_URL
+        sync: false
+      - key: WALLET_PRIVATE_KEY
+        sync: false
+      - key: WALLET_MASTER_MNEMONIC
+        sync: false
+      - key: WALLET_MASTER_PASSWORD
+        sync: false
+      - key: EXCHANGE_PLATFORM_USER_EMAIL
+        value: platform@exchange.local
+
+  - type: web
+    name: coinbaseclone-frontend
+    runtime: static
+    rootDir: Frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
