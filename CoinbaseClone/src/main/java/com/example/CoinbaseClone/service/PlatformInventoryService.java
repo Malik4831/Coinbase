@@ -41,7 +41,7 @@ public class PlatformInventoryService {
                 .orElseGet(() -> walletService.createWallet(platformUser, currency));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Wallet> getPlatformWallets() {
         User platformUser = getOrCreatePlatformUser();
         return walletService.getUserWallets(platformUser);
