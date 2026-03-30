@@ -90,14 +90,11 @@ public class ERC20Burnable extends Contract {
     }
 
     public static List<ApprovalEventResponse> getApprovalEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = staticExtractEventParametersWithLog(APPROVAL_EVENT, transactionReceipt);
-        ArrayList<ApprovalEventResponse> responses = new ArrayList<ApprovalEventResponse>(valueList.size());
-        for (Contract.EventValuesWithLog eventValues : valueList) {
-            ApprovalEventResponse typedResponse = new ApprovalEventResponse();
-            typedResponse.owner = (String) eventValues.getIndexedValues().get(0).getValue();
-            typedResponse.spender = (String) eventValues.getIndexedValues().get(1).getValue();
-            typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-            responses.add(typedResponse);
+        ArrayList<ApprovalEventResponse> responses = new ArrayList<ApprovalEventResponse>();
+        for (Log log : transactionReceipt.getLogs()) {
+            if (!log.getTopics().isEmpty() && log.getTopics().get(0).equals(EventEncoder.encode(APPROVAL_EVENT))) {
+                responses.add(getApprovalEventFromLog(log));
+            }
         }
         return responses;
     }
@@ -123,14 +120,11 @@ public class ERC20Burnable extends Contract {
     }
 
     public static List<TransferEventResponse> getTransferEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = staticExtractEventParametersWithLog(TRANSFER_EVENT, transactionReceipt);
-        ArrayList<TransferEventResponse> responses = new ArrayList<TransferEventResponse>(valueList.size());
-        for (Contract.EventValuesWithLog eventValues : valueList) {
-            TransferEventResponse typedResponse = new TransferEventResponse();
-            typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
-            typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
-            typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-            responses.add(typedResponse);
+        ArrayList<TransferEventResponse> responses = new ArrayList<TransferEventResponse>();
+        for (Log log : transactionReceipt.getLogs()) {
+            if (!log.getTopics().isEmpty() && log.getTopics().get(0).equals(EventEncoder.encode(TRANSFER_EVENT))) {
+                responses.add(getTransferEventFromLog(log));
+            }
         }
         return responses;
     }
