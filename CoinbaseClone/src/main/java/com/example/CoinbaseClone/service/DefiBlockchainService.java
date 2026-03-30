@@ -8,6 +8,9 @@ import org.web3j.model.DecentralizedCoin;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.RemoteFunctionCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.tx.RawTransactionManager;
+import org.web3j.tx.ReadonlyTransactionManager;
+import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
 
 import java.math.BigInteger;
@@ -19,7 +22,7 @@ public class DefiBlockchainService {
     private final Credentials credentials;
 
 
-@Autowired
+    @Autowired
     public DefiBlockchainService(Web3j web3j, Credentials credentials) throws Exception {
         this.web3j = web3j;
         this.credentials = credentials;
@@ -32,18 +35,35 @@ public class DefiBlockchainService {
 
 
     public DecentralizedCoin loadContract(String contractAddress)throws Exception {
-        return DecentralizedCoin.load(contractAddress,web3j,credentials,new DefaultGasProvider());
-
-
+        return DecentralizedCoin.load(
+                contractAddress,
+                web3j,
+                transactionManager(credentials),
+                new DefaultGasProvider()
+        );
     }
 
     public DecentralizedCoin loadContract(String contractAddress, Credentials signingCredentials) throws Exception {
-        return DecentralizedCoin.load(contractAddress, web3j, signingCredentials, new DefaultGasProvider());
+        return DecentralizedCoin.load(
+                contractAddress,
+                web3j,
+                transactionManager(signingCredentials),
+                new DefaultGasProvider()
+        );
+    }
+
+    public DecentralizedCoin loadReadonlyContract(String contractAddress) throws Exception {
+        return DecentralizedCoin.load(
+                contractAddress,
+                web3j,
+                new ReadonlyTransactionManager(web3j, credentials.getAddress()),
+                new DefaultGasProvider()
+        );
     }
 
 
     public BigInteger getTokenBalance(String walletAddress,String contractAddress) throws Exception {
-DecentralizedCoin loadedContract = loadContract(contractAddress);
+        DecentralizedCoin loadedContract = loadReadonlyContract(contractAddress);
         return loadedContract.balanceOf( walletAddress).send();
     }
 
@@ -73,14 +93,18 @@ DecentralizedCoin loadedContract = loadContract(contractAddress);
     }
 
     public RemoteFunctionCall<String> getTokenName(String contractAddress) throws Exception {
-        DecentralizedCoin loadedContract = loadContract(contractAddress);
+        DecentralizedCoin loadedContract = loadReadonlyContract(contractAddress);
         return loadedContract.name();
     }
 
     public String getTokenSymbol(String contractAddress) throws Exception {
-        DecentralizedCoin loadedContract = loadContract(contractAddress);
+        DecentralizedCoin loadedContract = loadReadonlyContract(contractAddress);
 
         return loadedContract.symbol().send();
+    }
+
+    private TransactionManager transactionManager(Credentials signingCredentials) {
+        return new RawTransactionManager(web3j, signingCredentials);
     }
 
 
