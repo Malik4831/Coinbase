@@ -300,6 +300,9 @@ function AuthPage({ authState, setAuthState }) {
     setStatus("");
     try {
       const user = await api.register(register);
+      if (!user || typeof user !== "object" || user.id == null) {
+        throw new Error("Registration succeeded but the API did not return a valid user payload.");
+      }
       const next = { ...authState, registeredUser: user, rememberedUserId: String(user.id ?? "") };
       setAuthState(next);
       persistAuthState(next);
@@ -316,6 +319,9 @@ function AuthPage({ authState, setAuthState }) {
     setStatus("");
     try {
       const data = await api.login(login);
+      if (!data || typeof data !== "object" || !data.token) {
+        throw new Error("Login succeeded but the API did not return a valid token payload.");
+      }
       const next = { ...authState, token: data.token };
       setAuthState(next);
       persistAuthState(next);

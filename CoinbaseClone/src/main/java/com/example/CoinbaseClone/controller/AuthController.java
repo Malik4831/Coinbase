@@ -4,6 +4,7 @@ import com.example.CoinbaseClone.model.User;
 import com.example.CoinbaseClone.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,34 +15,28 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private record RegisterResponse(
-            Long id,
-            String email,
-            String firstName,
-            String lastName,
-            String walletAddress,
-            boolean verified,
-            String role
-    ) {}
-
     @Autowired
     private UserService userService;
 
-    @PostMapping("/register")
+    @PostMapping(
+            value = "/register",
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<?> register(@RequestParam String email,
                                       @RequestParam String password,
                                       @RequestParam String firstName,
                                       @RequestParam String lastName) {
         try {
             User user = userService.registerUser(email, password, firstName, lastName);
-            return ResponseEntity.ok(new RegisterResponse(
-                    user.getId(),
-                    user.getEmail(),
-                    user.getFirstName(),
-                    user.getLastName(),
-                    user.getWalletAddress(),
-                    user.isVerified(),
-                    user.getRole()
+            return ResponseEntity.ok(Map.of(
+                    "id", user.getId(),
+                    "email", user.getEmail(),
+                    "firstName", user.getFirstName(),
+                    "lastName", user.getLastName(),
+                    "walletAddress", user.getWalletAddress() == null ? "" : user.getWalletAddress(),
+                    "verified", user.isVerified(),
+                    "role", user.getRole() == null ? "USER" : user.getRole()
             ));
         } catch (RuntimeException e) {
             HttpStatus status = "User already exists".equalsIgnoreCase(e.getMessage())
@@ -57,7 +52,11 @@ public class AuthController {
     @Autowired
     private com.example.CoinbaseClone.config.JwtUtil jwtUtil;
 
-    @PostMapping("/login")
+    @PostMapping(
+            value = "/login",
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
         var userOptional = userService.findByEmail(email);
         if (userOptional.isEmpty()) {
