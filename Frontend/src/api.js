@@ -50,6 +50,7 @@ async function request(path, options = {}) {
     body: payload,
   });
 
+  const contentType = response.headers.get("content-type") || "";
   const text = await response.text();
   let data = null;
 
@@ -59,6 +60,25 @@ async function request(path, options = {}) {
     } catch (_error) {
       data = text;
     }
+  }
+
+  const looksLikeHtml =
+    contentType.includes("text/html") ||
+    (typeof data === "string" && /^\s*<(?:!doctype|html)\b/i.test(data));
+
+  if (response.ok && looksLikeHtml) {
+    const error = new Error(
+      API_BASE_URL
+        ? `Expected JSON from ${buildUrl(path, params)} but received HTML instead. Check that VITE_API_BASE_URL points to the API service, not the frontend.`
+        : `Expected JSON from ${path} but received HTML instead. In production, set VITE_API_BASE_URL to your backend URL and rebuild the frontend.`
+    );
+    error.status = response.status;
+    error.details = {
+      path,
+      apiBaseUrl: API_BASE_URL || "(empty)",
+      contentType,
+    };
+    throw error;
   }
 
   if (!response.ok) {
