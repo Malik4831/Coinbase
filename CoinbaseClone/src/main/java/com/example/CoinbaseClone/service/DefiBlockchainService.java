@@ -3,10 +3,17 @@ package com.example.CoinbaseClone.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Function;
+import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.model.DecentralizedCoin;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.RemoteFunctionCall;
+import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.tx.ReadonlyTransactionManager;
@@ -15,6 +22,7 @@ import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.response.NoOpProcessor;
 
 import java.math.BigInteger;
+import java.util.Collections;
 
 
 @Service
@@ -82,9 +90,35 @@ public class DefiBlockchainService {
     }
 
     public TransactionReceipt mintTokens(String contractAddress,String to, BigInteger amount) throws Exception {
-        DecentralizedCoin loadedContract = loadContract(contractAddress);
+        String encodedFunction = FunctionEncoder.encode(
+                new Function(
+                        DecentralizedCoin.FUNC_MINT,
+                        java.util.Arrays.<Type>asList(
+                                new Address(160, to),
+                                new Uint256(amount)
+                        ),
+                        Collections.emptyList()
+                )
+        );
 
-        return loadedContract.mint( to, amount).send();
+        EthSendTransaction txResponse = transactionManager(credentials).sendTransaction(
+                DefaultGasProvider.GAS_PRICE,
+                DefaultGasProvider.GAS_LIMIT,
+                contractAddress,
+                encodedFunction,
+                BigInteger.ZERO
+        );
+
+        if (txResponse.hasError()) {
+            throw new IllegalStateException("Mint transaction rejected by RPC provider: " + txResponse.getError().getMessage());
+        }
+
+        String transactionHash = txResponse.getTransactionHash();
+        if (transactionHash == null || transactionHash.isBlank()) {
+            throw new IllegalStateException("Mint transaction was submitted without a transaction hash");
+        }
+
+        return waitForReceipt(transactionHash);
     }
 
     public TransactionReceipt burnTokens(String contractAddress,String from,BigInteger amount) throws Exception {
@@ -129,6 +163,22 @@ public class DefiBlockchainService {
         }
 
         throw new IllegalStateException("Configured RPC provider did not return a chain id or network version");
+    }
+
+    private TransactionReceipt waitForReceipt(String transactionHash) throws Exception {
+        int attempts = 30;
+        long pollDelayMs = 2_000L;
+
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            EthGetTransactionReceipt receiptResponse = web3j.ethGetTransactionReceipt(transactionHash).send();
+            if (receiptResponse != null && receiptResponse.getTransactionReceipt().isPresent()) {
+                return receiptResponse.getTransactionReceipt().get();
+            }
+
+            Thread.sleep(pollDelayMs);
+        }
+
+        throw new IllegalStateException("Mint transaction submitted but no receipt was mined within 60 seconds. Transaction hash: " + transactionHash);
     }
 
 
