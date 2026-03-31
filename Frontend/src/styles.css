@@ -261,6 +261,15 @@ th {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.stat-pill {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.stat-pill span {
+  color: var(--text-muted);
+}
+
 .meta-panel dd {
   margin: 0;
   overflow-wrap: anywhere;

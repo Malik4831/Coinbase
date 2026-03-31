@@ -417,7 +417,7 @@ function AuthPage({ authState, setAuthState }) {
         </form>
         <div className="meta-panel">
           <dl>
-            <div><dt>JWT subject</dt><dd>{payload?.sub || "Not signed in"}</dd></div>
+            <div><dt>Subject</dt><dd>{payload?.sub || "Not signed in"}</dd></div>
             <div><dt>User id</dt><dd>{authState.registeredUser?.id ?? "N/A"}</dd></div>
             <div><dt>Wallet</dt><dd>{authState.registeredUser?.walletAddress || "N/A"}</dd></div>
           </dl>
@@ -869,7 +869,7 @@ function DashboardPage({ authState, setAuthState }) {
           <h1>Exchange dashboard</h1>
         </div>
         <div className="hero-stack">
-          <div className="stat-pill"><span>JWT subject</span><strong>{payload?.sub || "Unknown"}</strong></div>
+          <div className="stat-pill"><span>Subject</span><strong>{payload?.sub || "Unknown"}</strong></div>
           <div className="stat-pill"><span>Role</span><strong>{payload?.role || "USER"}</strong></div>
           <div className="stat-pill"><span>Wallets</span><strong>{wallets.length}</strong></div>
           <div className="stat-pill"><span>Wallet address</span><strong>{selectedWallet?.blockchainAddress || "Load wallets"}</strong></div>
