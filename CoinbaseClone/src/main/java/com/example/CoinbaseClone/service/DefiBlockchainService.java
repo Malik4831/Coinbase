@@ -79,14 +79,50 @@ public class DefiBlockchainService {
 
 
     public TransactionReceipt transferTokens(String contractAddress, Credentials signingCredentials, String to, BigInteger amount) throws Exception {
-        DecentralizedCoin loadedContract = loadContract(contractAddress, signingCredentials);
-        return loadedContract.transfer(to, amount).send();
+        String encodedFunction = FunctionEncoder.encode(
+                new Function(
+                        DecentralizedCoin.FUNC_TRANSFER,
+                        java.util.Arrays.<Type>asList(
+                                new Address(160, to),
+                                new Uint256(amount)
+                        ),
+                        Collections.emptyList()
+                )
+        );
+
+        EthSendTransaction txResponse = transactionManager(signingCredentials).sendTransaction(
+                DefaultGasProvider.GAS_PRICE,
+                DefaultGasProvider.GAS_LIMIT,
+                contractAddress,
+                encodedFunction,
+                BigInteger.ZERO
+        );
+
+        return extractAndWaitForReceipt(txResponse, "Transfer");
     }
 
     public TransactionReceipt transferTokensFrom(String contractAddress,String from,String to, BigInteger amount) throws Exception {
-        DecentralizedCoin loadedContract = loadContract(contractAddress);
+        String encodedFunction = FunctionEncoder.encode(
+                new Function(
+                        DecentralizedCoin.FUNC_TRANSFERFROM,
+                        java.util.Arrays.<Type>asList(
+                                new Address(160, from),
+                                new Address(160, to),
+                                new Uint256(amount)
+                        ),
+                        Collections.emptyList()
+                )
+        );
 
-        return loadedContract.transferFrom(from,to,amount).send();
+        EthSendTransaction txResponse = transactionManager(credentials).sendTransaction(
+                DefaultGasProvider.GAS_PRICE,
+                DefaultGasProvider.GAS_LIMIT,
+                contractAddress,
+                encodedFunction,
+                BigInteger.ZERO
+        );
+
+        return extractAndWaitForReceipt(txResponse, "transferFrom");
     }
 
     public TransactionReceipt mintTokens(String contractAddress,String to, BigInteger amount) throws Exception {
@@ -109,22 +145,30 @@ public class DefiBlockchainService {
                 BigInteger.ZERO
         );
 
-        if (txResponse.hasError()) {
-            throw new IllegalStateException("Mint transaction rejected by RPC provider: " + txResponse.getError().getMessage());
-        }
-
-        String transactionHash = txResponse.getTransactionHash();
-        if (transactionHash == null || transactionHash.isBlank()) {
-            throw new IllegalStateException("Mint transaction was submitted without a transaction hash");
-        }
-
-        return waitForReceipt(transactionHash);
+        return extractAndWaitForReceipt(txResponse, "Mint");
     }
 
     public TransactionReceipt burnTokens(String contractAddress,String from,BigInteger amount) throws Exception {
-        DecentralizedCoin loadedContract = loadContract(contractAddress);
+        String encodedFunction = FunctionEncoder.encode(
+                new Function(
+                        DecentralizedCoin.FUNC_burn,
+                        java.util.Arrays.<Type>asList(
+                                new Address(160, from),
+                                new Uint256(amount)
+                        ),
+                        Collections.emptyList()
+                )
+        );
 
-        return loadedContract.burn(from, amount).send();
+        EthSendTransaction txResponse = transactionManager(credentials).sendTransaction(
+                DefaultGasProvider.GAS_PRICE,
+                DefaultGasProvider.GAS_LIMIT,
+                contractAddress,
+                encodedFunction,
+                BigInteger.ZERO
+        );
+
+        return extractAndWaitForReceipt(txResponse, "Burn");
     }
 
     public RemoteFunctionCall<String> getTokenName(String contractAddress) throws Exception {
@@ -179,6 +223,23 @@ public class DefiBlockchainService {
         }
 
         throw new IllegalStateException("Mint transaction submitted but no receipt was mined within 60 seconds. Transaction hash: " + transactionHash);
+    }
+
+    private TransactionReceipt extractAndWaitForReceipt(EthSendTransaction txResponse, String action) throws Exception {
+        if (txResponse == null) {
+            throw new IllegalStateException(action + " transaction did not receive a response from the RPC provider");
+        }
+
+        if (txResponse.hasError()) {
+            throw new IllegalStateException(action + " transaction rejected by RPC provider: " + txResponse.getError().getMessage());
+        }
+
+        String transactionHash = txResponse.getTransactionHash();
+        if (transactionHash == null || transactionHash.isBlank()) {
+            throw new IllegalStateException(action + " transaction was submitted without a transaction hash");
+        }
+
+        return waitForReceipt(transactionHash);
     }
 
 
