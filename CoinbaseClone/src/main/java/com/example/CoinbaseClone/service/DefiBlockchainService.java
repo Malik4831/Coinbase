@@ -12,6 +12,7 @@ import org.web3j.tx.RawTransactionManager;
 import org.web3j.tx.ReadonlyTransactionManager;
 import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
+import org.web3j.tx.response.NoOpProcessor;
 
 import java.math.BigInteger;
 
@@ -104,7 +105,30 @@ public class DefiBlockchainService {
     }
 
     private TransactionManager transactionManager(Credentials signingCredentials) {
-        return new RawTransactionManager(web3j, signingCredentials);
+        return new RawTransactionManager(
+                web3j,
+                signingCredentials,
+                resolveChainId(),
+                new NoOpProcessor(web3j)
+        );
+    }
+
+    private long resolveChainId() {
+        try {
+            var chainIdResponse = web3j.ethChainId().send();
+            if (chainIdResponse != null && chainIdResponse.getChainId() != null) {
+                return chainIdResponse.getChainId().longValueExact();
+            }
+
+            var netVersionResponse = web3j.netVersion().send();
+            if (netVersionResponse != null && netVersionResponse.getNetVersion() != null) {
+                return Long.parseLong(netVersionResponse.getNetVersion());
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to resolve chain id from the configured RPC provider", e);
+        }
+
+        throw new IllegalStateException("Configured RPC provider did not return a chain id or network version");
     }
 
 
