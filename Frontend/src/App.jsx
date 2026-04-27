@@ -3,7 +3,7 @@ import { Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { api, setUnauthorizedHandler } from "./api";
 import { decodeJwt, encodeApproveData, formatValue, getErrorMessage, isJwtExpired, toTokenBaseUnits } from "./utils";
 
-const storageKey = "coinbaseclone.auth";
+const storageKey = "crypto-app-student-project.auth";
 
 const COINGECKO_IDS = {
   BTC: "bitcoin",
@@ -136,6 +136,26 @@ function Field({ label, hint, children }) {
 function StatusBanner({ tone, children }) {
   if (!children) return null;
   return <div className={`banner banner-${tone}`}>{children}</div>;
+}
+
+function ProjectWarningBanner() {
+  return (
+    <div className="project-warning" role="note" aria-label="Project disclaimer">
+      Student project. Not affiliated with Coinbase.
+    </div>
+  );
+}
+
+function FooterDisclaimer() {
+  return (
+    <footer className="app-footer">
+      Demo project. Do not enter real personal information when signing up.
+    </footer>
+  );
+}
+
+function DemoPrivacyNote() {
+  return <p className="demo-note">Demo app - do not enter real personal information.</p>;
 }
 
 function TokenContractPicker({ tokens, value, onSelect, onOpen, disabled }) {
@@ -400,6 +420,7 @@ function AuthPage({ authState, setAuthState }) {
       <SectionCard eyebrow="AuthController" title="Register">
         <StatusBanner tone="success">{status}</StatusBanner>
         <StatusBanner tone="danger">{error}</StatusBanner>
+        <DemoPrivacyNote />
         <form className="form-grid" onSubmit={onRegister}>
           <Field label="Email"><input required type="email" value={register.email} onChange={(e) => setRegister((s) => ({ ...s, email: e.target.value }))} /></Field>
           <Field label="Password"><input required type="password" value={register.password} onChange={(e) => setRegister((s) => ({ ...s, password: e.target.value }))} /></Field>
@@ -410,6 +431,7 @@ function AuthPage({ authState, setAuthState }) {
       </SectionCard>
 
       <SectionCard eyebrow="AuthController" title="Login">
+        <DemoPrivacyNote />
         <form className="form-grid" onSubmit={onLogin}>
           <Field label="Email"><input required type="email" value={login.email} onChange={(e) => setLogin((s) => ({ ...s, email: e.target.value }))} /></Field>
           <Field label="Password"><input required type="password" value={login.password} onChange={(e) => setLogin((s) => ({ ...s, password: e.target.value }))} /></Field>
@@ -1171,9 +1193,10 @@ export default function App() {
 
   return (
     <div className="shell">
+      <ProjectWarningBanner />
       <header className="topbar">
         <div>
-          <h1>CoinbaseClone</h1>
+          <h1>Crypto App Student Project</h1>
         </div>
       </header>
 
@@ -1189,6 +1212,7 @@ export default function App() {
           }
         />
       </Routes>
+      <FooterDisclaimer />
     </div>
   );
 }
